@@ -1,10 +1,10 @@
-CREATE TABLE IF NOT EXISTS `order`
+CREATE TABLE IF NOT EXISTS tb_order
 (
-    id INT(11) NOT NULL,
-    user_id INT(11) NOT NULL,
+    id BIGINT(20) NOT NULL,
+    user_id BIGINT(20) NOT NULL,
     order_at TIMESTAMP NULL DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NULL DEFAULT NULL,
     PRIMARY KEY (id),
-    FOREIGN KEY (user_id) REFERENCES user(id)
+    FOREIGN KEY (user_id) REFERENCES tb_user(id)
 );

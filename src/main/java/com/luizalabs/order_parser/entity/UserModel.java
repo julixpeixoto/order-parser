@@ -1,5 +1,6 @@
 package com.luizalabs.order_parser.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
@@ -16,17 +17,19 @@ import java.time.LocalDateTime;
 @Data
 @Builder
 @Entity
-@Table(name = "user")
+@Table(name = "tb_user")
 @AllArgsConstructor
 @NoArgsConstructor
 public class UserModel {
     @Id
-    private Integer id;
+    @Column(name = "id", columnDefinition = "INT(11)")
+    private Long id;
 
     private String name;
 
     @CreationTimestamp
     @ColumnDefault("CURRENT_TIMESTAMP")
+    @Column(updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp

@@ -17,19 +17,21 @@ import java.util.Set;
 @Data
 @Builder
 @Entity
-@Table(name = "product")
+@Table(name = "tb_product")
 @AllArgsConstructor
 @NoArgsConstructor
 public class ProductModel {
     @Id
-    private Integer id;
+    @Column(name = "id", columnDefinition = "INT(11)")
+    private Long id;
 
-    @ManyToMany(mappedBy = "products", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
-    private Set<OrderModel> orders = new HashSet<>();
+    private Set<OrderProductModel> orderProducts = new HashSet<>();
 
     @CreationTimestamp
     @ColumnDefault("CURRENT_TIMESTAMP")
+    @Column(updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
