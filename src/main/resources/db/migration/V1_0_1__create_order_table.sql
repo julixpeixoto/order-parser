@@ -1,0 +1,10 @@
+CREATE TABLE IF NOT EXISTS `order`
+(
+    id INT(11) NOT NULL,
+    user_id INT(11) NOT NULL,
+    order_at TIMESTAMP NULL DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT NULL,
+    PRIMARY KEY (id),
+    FOREIGN KEY (user_id) REFERENCES user(id)
+);

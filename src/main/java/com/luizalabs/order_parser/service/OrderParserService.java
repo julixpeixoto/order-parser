@@ -1,6 +1,9 @@
 package com.luizalabs.order_parser.service;
 
+import com.luizalabs.order_parser.dto.ResponseDto;
+import org.springframework.web.multipart.MultipartFile;
+
 public interface OrderParserService {
 
-    void processFile();
+    ResponseDto processFile(MultipartFile file);
 }
