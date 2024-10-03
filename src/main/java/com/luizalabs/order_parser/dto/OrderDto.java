@@ -6,8 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.List;
 
 @AllArgsConstructor
@@ -19,10 +17,10 @@ public class OrderDto {
     public int orderId;
 
     @JsonProperty("total")
-    public BigDecimal total;
+    public String total;
 
     @JsonProperty("date")
-    public LocalDate orderAt;
+    public String date;
 
     @JsonProperty("products")
     public List<ProductDto> products;

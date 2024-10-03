@@ -1,8 +1,9 @@
 package com.luizalabs.order_parser.service.impl;
 
 import com.luizalabs.order_parser.dto.ResponseDto;
-import com.luizalabs.order_parser.entity.*;
-import com.luizalabs.order_parser.repository.OrderProductRepository;
+import com.luizalabs.order_parser.entity.OrderModel;
+import com.luizalabs.order_parser.entity.ProductSoldModel;
+import com.luizalabs.order_parser.entity.UserModel;
 import com.luizalabs.order_parser.repository.OrderRepository;
 import com.luizalabs.order_parser.repository.ProductRepository;
 import com.luizalabs.order_parser.repository.UserRepository;
@@ -20,8 +21,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -32,18 +32,14 @@ public class OrderParserServiceImpl implements OrderParserService {
 
     private final ProductRepository productRepository;
 
-    private final OrderProductRepository orderProductRepository;
-
     private final ModelMapper modelMapper = new ModelMapper();
 
     public OrderParserServiceImpl(UserRepository userRepository,
                                   OrderRepository orderRepository,
-                                  ProductRepository productRepository,
-                                  OrderProductRepository orderProductRepository) {
+                                  ProductRepository productRepository) {
         this.userRepository = userRepository;
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
-        this.orderProductRepository = orderProductRepository;
     }
 
     @Override
@@ -52,10 +48,10 @@ public class OrderParserServiceImpl implements OrderParserService {
         List<String> lines = getLines(file);
 
         if (!lines.isEmpty()) {
-            lines.forEach(this::insertUser);
+            List<String> uniqueUsers = getUniqueUsers(lines);
+            uniqueUsers.forEach(this::insertUser);
             lines.forEach(this::insertOrder);
             lines.forEach(this::insertProduct);
-            lines.forEach(this::insertOrderProduct);
         }
 
         log.info("File processed");
@@ -70,78 +66,69 @@ public class OrderParserServiceImpl implements OrderParserService {
 
     private List<String> getLines(MultipartFile file) {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
-            return reader.lines().toList();
+            var lines = Arrays.asList(reader.lines().toList().toArray(new String[0]));
+            lines.sort(Comparator.comparing(line -> line.substring(0, 10).trim()));
+            return lines;
         } catch (IOException e) {
             log.error("Error while reading file: {}", e.getMessage());
             return Collections.emptyList();
         }
     }
 
-    @Transactional
-    private void insertUser(String line) {
-        try {
-            UserModel user = UserModel.builder()
-                    .id(Long.valueOf(line.substring(0, 10).trim()))
-                    .name(line.substring(10, 55).trim())
-                    .build();
-            userRepository.save(user);
-        } catch (Exception e) {
-            log.error("Error while inserting user: {}", e.getMessage());
+        @Transactional
+        private void insertUser (String line){
+            try {
+                UserModel user = UserModel.builder()
+                        .id(Long.valueOf(line.substring(0, 10).trim()))
+                        .name(line.substring(10, 55).trim())
+                        .build();
+                userRepository.save(user);
+            } catch (Exception e) {
+                log.error("Error while inserting user: {}", e.getMessage());
+            }
+        }
+
+        @Transactional
+        private void insertOrder (String line){
+            try {
+                Long userId = Long.valueOf(line.substring(0, 10).trim());
+                OrderModel order = OrderModel.builder()
+                        .id(Long.valueOf(line.substring(55, 65).trim()))
+                        .user(userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found by id: " + userId)))
+                        .orderAt(DateUtil.formatStringToDate(line.substring(87, 95).trim()).atStartOfDay())
+                        .build();
+                orderRepository.save(order);
+            } catch (Exception e) {
+                log.error("Error while inserting order: {}", e.getMessage());
+            }
+        }
+
+        @Transactional
+        private void insertProduct (String line){
+            try {
+                Long productId = Long.valueOf(line.substring(65, 75).trim());
+                ProductSoldModel product = ProductSoldModel.builder()
+                        .order(orderRepository.findById(Long.valueOf(line.substring(55, 65).trim()))
+                                .orElseThrow(() -> new RuntimeException("Order not found by id: " + line.substring(55, 65).trim())))
+                        .productId(productId)
+                        .soldValue(BigDecimal.valueOf(Float.valueOf(line.substring(75, 87).trim())))
+                        .build();
+                productRepository.save(product);
+            } catch (Exception e) {
+                log.error("Error while inserting product: {}", e.getMessage());
+            }
+        }
+
+        private List<String> getUniqueUsers(List<String> lines) {
+            List<String> uniqueUsers = new ArrayList<>();
+
+            lines.forEach(line -> {
+                String userIdentifier = line.substring(0, 55).trim();
+                if (!uniqueUsers.contains(userIdentifier)) {
+                    uniqueUsers.add(userIdentifier);
+                }
+            });
+
+            return uniqueUsers;
         }
     }
-
-    @Transactional
-    private void insertOrder(String line) {
-        try {
-            Long userId = Long.valueOf(line.substring(0, 10).trim());
-            OrderModel order = OrderModel.builder()
-                    .id(Long.valueOf(line.substring(55, 65).trim()))
-                    .user(userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found by id: " + userId)))
-                    .orderAt(DateUtil.formatStringToDate(line.substring(87, 95).trim()).atStartOfDay())
-                    .build();
-            orderRepository.save(order);
-        } catch (Exception e) {
-            log.error("Error while inserting order: {}", e.getMessage());
-        }
-    }
-
-    @Transactional
-    private void insertProduct(String line) {
-        try {
-            Long productId = Long.valueOf(line.substring(65, 75).trim());
-            ProductModel product = ProductModel.builder()
-                    .id(productId)
-                    .build();
-            productRepository.save(product);
-        } catch (Exception e) {
-            log.error("Error while inserting product: {}", e.getMessage());
-        }
-    }
-
-    @Transactional
-    private void insertOrderProduct(String line) {
-        try {
-            Long orderId = Long.valueOf(line.substring(55, 65).trim());
-            Long productId = Long.valueOf(line.substring(65, 75).trim());
-            Float productSoldValue = Float.valueOf(line.substring(75, 87).trim());
-
-            OrderModel order = orderRepository.findById(orderId).orElseThrow(() -> new RuntimeException("Order not found by id: " + orderId));
-            ProductModel product = productRepository.findById(productId).orElseThrow(() -> new RuntimeException("Product not found by id: " + productId));
-
-            OrderProductModel orderProduct = OrderProductModel.builder()
-                    .order(order)
-                    .product(product)
-                    .productSoldValue(BigDecimal.valueOf(productSoldValue))
-                    .build();
-
-            OrderProductId orderProductId = new OrderProductId();
-            orderProductId.setOrderId(orderId);
-            orderProductId.setProductId(productId);
-            orderProduct.setId(orderProductId);
-
-            orderProductRepository.save(orderProduct);
-        } catch (Exception e) {
-            log.error("Error while inserting order product: {}", e.getMessage());
-        }
-    }
-}

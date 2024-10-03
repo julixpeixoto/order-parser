@@ -1,10 +1,7 @@
 package com.luizalabs.order_parser.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -19,6 +16,7 @@ import java.util.List;
 @Table(name = "tb_user")
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString
 public class UserModel {
     @Id
     @Column(name = "id", columnDefinition = "INT(11)")
@@ -26,7 +24,7 @@ public class UserModel {
 
     private String name;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<OrderModel> orders = new ArrayList<>();
 
     @CreationTimestamp
