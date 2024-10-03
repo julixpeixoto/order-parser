@@ -1,5 +1,6 @@
 package com.luizalabs.order_parser.controller;
 
+import com.luizalabs.order_parser.dto.MessageDto;
 import com.luizalabs.order_parser.dto.ResponseDto;
 import com.luizalabs.order_parser.service.OrderParserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -26,13 +27,14 @@ public class OrderParserController {
 
     @Operation(summary = "Upload do arquivo de pedidos",
             responses = {
-                    @ApiResponse(responseCode = "200", content = @Content(mediaType = "application/json"))
+                    @ApiResponse(responseCode = "200", content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = MessageDto.class)))
             }
     )
     @PostMapping(value = "/process-file", consumes = "multipart/form-data")
-    public ResponseEntity<ResponseDto> processFile(@RequestParam("file") MultipartFile file) {
-        ResponseDto responseDto = orderParserService.processFile(file);
-        return ResponseEntity.ok(responseDto);
+    public ResponseEntity<MessageDto> processFile(@RequestParam("file") MultipartFile file) {
+        orderParserService.processFile(file);
+        return ResponseEntity.ok(MessageDto.builder().message("File processed successfully").build());
     }
 
     @Operation(summary = "Listagem pedidos paginados",

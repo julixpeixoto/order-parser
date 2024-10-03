@@ -4,6 +4,7 @@ import com.luizalabs.order_parser.dto.ResponseDto;
 import com.luizalabs.order_parser.entity.OrderModel;
 import com.luizalabs.order_parser.entity.ProductSoldModel;
 import com.luizalabs.order_parser.entity.UserModel;
+import com.luizalabs.order_parser.exception.ProcessFileException;
 import com.luizalabs.order_parser.repository.OrderRepository;
 import com.luizalabs.order_parser.repository.ProductRepository;
 import com.luizalabs.order_parser.repository.UserRepository;
@@ -43,19 +44,22 @@ public class OrderParserServiceImpl implements OrderParserService {
     }
 
     @Override
-    public ResponseDto processFile(MultipartFile file) {
-        log.info("Processing file");
-        List<String> lines = getLines(file);
+    public void processFile(MultipartFile file) {
+        try {
+            log.info("Processing file");
+            List<String> lines = getLines(file);
 
-        if (!lines.isEmpty()) {
-            List<String> uniqueUsers = getUniqueUsers(lines);
-            uniqueUsers.forEach(this::insertUser);
-            lines.forEach(this::insertOrder);
-            lines.forEach(this::insertProduct);
+            if (!lines.isEmpty()) {
+                List<String> uniqueUsers = getUniqueUsers(lines);
+                uniqueUsers.forEach(this::insertUser);
+                lines.forEach(this::insertOrder);
+                lines.forEach(this::insertProduct);
+            }
+
+            log.info("File processed");
+        } catch (Exception e) {
+            throw new ProcessFileException("Error while processing file... " + e.getMessage());
         }
-
-        log.info("File processed");
-        return null;
     }
 
     @Override
@@ -70,8 +74,7 @@ public class OrderParserServiceImpl implements OrderParserService {
             lines.sort(Comparator.comparing(line -> line.substring(0, 10).trim()));
             return lines;
         } catch (IOException e) {
-            log.error("Error while reading file: {}", e.getMessage());
-            return Collections.emptyList();
+            throw new ProcessFileException("Error while reading file: " + e.getMessage());
         }
     }
 
@@ -84,7 +87,7 @@ public class OrderParserServiceImpl implements OrderParserService {
                         .build();
                 userRepository.save(user);
             } catch (Exception e) {
-                log.error("Error while inserting user: {}", e.getMessage());
+                throw new ProcessFileException("Error while inserting user: " + e.getMessage());
             }
         }
 
@@ -99,7 +102,7 @@ public class OrderParserServiceImpl implements OrderParserService {
                         .build();
                 orderRepository.save(order);
             } catch (Exception e) {
-                log.error("Error while inserting order: {}", e.getMessage());
+                throw new ProcessFileException("Error while inserting order: " + e.getMessage());
             }
         }
 
@@ -115,7 +118,7 @@ public class OrderParserServiceImpl implements OrderParserService {
                         .build();
                 productRepository.save(product);
             } catch (Exception e) {
-                log.error("Error while inserting product: {}", e.getMessage());
+                throw new ProcessFileException("Error while inserting product: " + e.getMessage());
             }
         }
 

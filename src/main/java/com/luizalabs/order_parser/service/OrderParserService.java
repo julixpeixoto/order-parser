@@ -7,6 +7,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 public interface OrderParserService {
 
-    ResponseDto processFile(MultipartFile file);
+    void processFile(MultipartFile file);
     Page<ResponseDto> getAll(Pageable pagination);
 }
