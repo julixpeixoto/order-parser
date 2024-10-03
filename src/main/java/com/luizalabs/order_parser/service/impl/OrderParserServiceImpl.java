@@ -10,6 +10,9 @@ import com.luizalabs.order_parser.service.OrderParserService;
 import com.luizalabs.order_parser.util.DateUtil;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
+import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -30,6 +33,8 @@ public class OrderParserServiceImpl implements OrderParserService {
     private final ProductRepository productRepository;
 
     private final OrderProductRepository orderProductRepository;
+
+    private final ModelMapper modelMapper = new ModelMapper();
 
     public OrderParserServiceImpl(UserRepository userRepository,
                                   OrderRepository orderRepository,
@@ -55,6 +60,12 @@ public class OrderParserServiceImpl implements OrderParserService {
 
         log.info("File processed");
         return null;
+    }
+
+    @Override
+    public Page<ResponseDto> getAll(Pageable pagination) {
+        Page<UserModel> users = userRepository.findByOrderById(pagination);
+        return users.map(add -> modelMapper.map(add, ResponseDto.class));
     }
 
     private List<String> getLines(MultipartFile file) {
