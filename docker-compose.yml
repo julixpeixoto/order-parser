@@ -1,0 +1,35 @@
+version: '3'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: order-parser-backend
+    volumes:
+      - ./target:/app
+    ports:
+      - "8080:8080"
+    environment:
+      - MYSQL_URL=jdbc:mysql://db:3306/order-parser-db
+      - MYSQL_PASSWORD=root
+      - MYSQL_USER=root
+      - MYSQL_DATABASE=order-parser-db
+    depends_on:
+      - db
+    networks:
+      - order-parser-network
+
+  db:
+    image: mysql:8
+    container_name: order-parser-db
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=order-parser-db
+    ports:
+      - "3307:3306"
+    networks:
+      - order-parser-network
+
+networks:
+  order-parser-network:
